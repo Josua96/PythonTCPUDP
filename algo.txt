@@ -1,0 +1,7 @@
+https://help.ubuntu.com/community/NetworkConfigurationCommandLine/Automatic
+https://www.cybrary.it/0p3n/create-complete-virtual-environment-penetration-testing-part-2/
+
+IpCalc
+
+NOTAS:
+1 validar que si servidor no responde no inicie proceso de despliegue de marcadores

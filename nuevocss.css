@@ -1,0 +1,17 @@
+rooot{
+
+ --var:3;
+
+}
+.miclase{
+   heigh:120%;
+   width: 10px;
+
+}
+
+@media max (screen){
+my archivo css
+  --var : calc('var')
+}
+
+
