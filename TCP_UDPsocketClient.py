@@ -87,7 +87,7 @@ class TCPClientSocketManager:
                                       "fileName":fileName,"status":0,"isBinary":isBinary,
                                       "fileSize":int(fileSize)}))
                     """""""""
-                    self.socket.send("1 2048 "+ str(dataSegment)+" "+ fileName+" "+"0 "+"0 "+str(fileSize))
+                    self.socket.send("1 1800 "+ str(dataSegment)+" "+ fileName+" "+"0 "+"0 "+str(fileSize))
 
                     data=self.socket.recv(self.receiveBufferSize)
                     if data =="True":
@@ -109,7 +109,7 @@ class TCPClientSocketManager:
                         #posicionar el archivo en el byte que indica el ack
                         file.seek(int(data))
 
-                    fileData =base64.b64encode(file.read(8))
+                    fileData =base64.b64encode(file.read(1800))
                     print("datos en el archivo")
                     print(fileData)
                     print("decodificando")

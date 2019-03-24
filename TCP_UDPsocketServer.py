@@ -47,7 +47,7 @@ class TCPSocketServerManager:
             ack=0
             newFile= open("files/"+initialData[3],self.typeOfFile(int(initialData[5])))
 
-            bytesTransfered=0;
+            bytesTransfered=0
             fileTransfered=False
             data={}
             print("enviar al cliente una notifiacion de archivo")
@@ -83,6 +83,13 @@ class TCPSocketServerManager:
 
                     bytesTransfered += mss
                     ack += mss
+
+                    if (ack >= windowSize):
+                        if bytesTransfered < fileSize:
+                            client.send(str(bytesTransfered))
+                            ack=0
+
+
 
 
 
