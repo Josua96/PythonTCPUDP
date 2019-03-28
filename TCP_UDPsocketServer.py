@@ -1,6 +1,7 @@
 import socket
 import select
 from threading import Thread
+from datetime import datetime
 import os
 import base64
 import pickle
@@ -335,6 +336,22 @@ class TCPSocketServerManager:
 
 """""""""" UDP socket server class """""""" """
 
+class ClientMessage:
+
+    def __init__(self,data,clientAddress):
+
+        self.data=data
+        self.clientData= clientAddress
+
+    def getData(self):
+
+        return self.data
+
+    def getClientData(self):
+
+        return self.clientData
+
+
 class UDPSocketServerManager:
 
     def __init__(self,receiveBufferSize,sendBufferSize,port):
@@ -342,6 +359,8 @@ class UDPSocketServerManager:
         self.closeSocket=False
         self.receiveBufferSize = receiveBufferSize
         self.sendBufferSize = sendBufferSize
+        self.messageList=[]
+        self.filesUploading={}
 
         # create an INET, STREAMing socket
         self.serversocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -355,7 +374,7 @@ class UDPSocketServerManager:
        # self.serversocket.listen(20)
         print(" UDP socket listen at "+  socket.gethostbyname(socket.gethostname()) +" port "+ str(port))
         print("")
-        self.handleClientConnections()
+        self.initOperation()
 
     def sendMesssage(self, socketConnection,destiny, message):
 
@@ -450,76 +469,167 @@ class UDPSocketServerManager:
             print(e)
 
 
-    def receiveFile(self,client,clientAddres,fileName):
+    def generateFile(self,fileData):
 
         try:
 
-            client.settimeout(5)
-            res, address = self.receiveMessage(client, True)
+            fileType=int(fileData[0]["fileType"])
+            fileSize= int(fileData[0]["fileSize"])
 
-            if res[0] == "F":
-                print("No fue posible obtener el archivo del cliente")
+            print("size archivo "+ str(fileSize))
+            print("bytes recibido "+ str((len(fileData)-1)* int(fileData[0]["fileSegment"])))
+
+            if ((len(fileData)-1)* int(fileData[0]["fileSegment"])) >= fileSize:
+
+                newFile = open("files/" + fileData[0]["fileName"], self.typeOfFile(fileType))
+
+                for index in range(1,len(fileData),1):
+
+                    time.sleep(0.2)
+                    if fileType == 0:
+                        lines = base64.b64decode(fileData[index]["data"]).split("\n")
+                        largo = len(lines) - 1
+                        for line in lines:
+                            if line == lines[largo]:
+                                newFile.write(line)
+                            else:
+                                newFile.write(line + os.linesep)
+
+                    else:
+                        newFile.write(base64.b64decode(fileData[index]["data"]))
+                print("El archivo con nombre "+ fileData[0]["fileName"] +" ha sido recibido")
+                newFile.close()
                 return
 
-            print("respuesta del cliente")
-            print(res)
-            fileSize = int(res[1])
-            mss = int(res[2])
-            receivedBytes = 0
-            print("tipo de lectura: " + self.typeOfFile(int(res[0])))
-            newFile = open("files/"+fileName, self.typeOfFile(int(res[0])))
 
-            while True:
+            else:
+                print("Error !!!. Parece que no fue posible recibir el archivo completo desde el cliente")
 
 
-                data, address = self.receiveMessage(client, False)
 
-                if int(res[0]) == 0:
-                    lines = base64.b64decode(data).split("\n")
-                    largo = len(lines) - 1
-                    for line in lines:
-                        if line == lines[largo]:
-                            newFile.write(line)
-                        else:
-                            newFile.write(line + os.linesep)
+        except IOError as e:
+            print("ocurrio un error al generar el archivo subido por el cliente")
+            print(e)
 
-                else:
-                    newFile.write(base64.b64decode(data))
+    def checkFilesUploading(self,filesDic):
 
-                receivedBytes += mss
-
-            newFile.close()
+        while self.closeSocket == False:
 
 
-        except socket.timeout as e:
+            for fileUpload in filesDic.keys():
 
-            if (receivedBytes > fileSize):
-                print("El archivo ha sido subido")
+                if (len(filesDic[fileUpload]) == 1):
+                    continue
 
-            print(
-                "NOTA: El archivo puede no haberse construido bien debido al uso del protocolo UDP o el tiempo de espera se ha agotado")
+                currentTime = datetime.now()
+
+                lastPacket= filesDic[fileUpload][len(filesDic[fileUpload])-1]
+                timeDifference= currentTime - lastPacket["receiveAt"]
+
+                if timeDifference.total_seconds() >= 10:
+                    print("El archivo lleva en cola mas o diez segundos")
+                    tempElement = filesDic[fileUpload]
+                    Thread(target=self.generateFile, args=(tempElement,)).start()
+                    del filesDic[fileUpload]
 
 
-    def handleClient(self,data,clientAddress):
-        print("administrando cliente UDP")
-        print (data)
+
+       # datetime.datetime.now()
+
+    def addToFileUploading(self,dic,key,value):
+        dic[key]= value
+
+    def addFileSegment(self,dic,key,newSegment):
+
+        dic[key].append(newSegment)
+
+    def isInFilesUploading(self,dic,key):
+
+        return key in dic.keys()
+
+    def manageFileUpload(self,clientMessage):
+
+        data= clientMessage.getData()
+        if  len(data) ==2 and data[1] == "F":
+            print("Cliente con IP "+ clientMessage.getClientData()[0]+" ha cancelado la transmision del archivo")
+
+        # "Es el inicio de la transmision de un archivo"
+        elif len(data) > 3:
+
+            self.addToFileUploading(self.filesUploading,clientMessage.getClientData()[0]+data[1],
+                                    [{"fileType": data[2],"fileSize":int(data[3]),"fileName":data[1],"fileSegment":int(data[4])}])
+
+        else:
+
+            self.addFileSegment(self.filesUploading,clientMessage.getClientData()[0]+data[1],
+                                {"receiveAt":datetime.now(),"data":data[2]})
+
+
+
+    def addMessage(self,message):
+
+        self.messageList.append(message)
+
+    def handleClientMessage(self, clientMessage):
+
+        print("administrando mensaje de cliente UDP")
+
+        data = clientMessage.getData()
         if int(data[0]) == 0:
-            print("cliente desea descargar un archivo")
-            self.sendFile(self.serversocket,clientAddress,data[1])
+            print("mensaje de descarga de un archivo")
+            self.sendFile(self.serversocket, clientMessage.getClientData(), data[1])
+
             print("El archivo ha sido enviado al cliente")
             return
 
         elif int(data[0]) == 1:
             print("cliente desea subir un archivo")
-            self.receiveFile(self.serversocket,clientAddress,data[1])
-            print("se finalizo de recibir el archivo")
+
+            self.manageFileUpload(clientMessage)
             return
+
         elif int(data[0]) == 2:
             print("cliente desea visualizar la lista de archivos")
-            self.seeFilesInFolder(self.serversocket,clientAddress)
+            self.seeFilesInFolder(self.serversocket, clientMessage.getClientData())
             return
 
+    def readClientMessages(self):
 
+        while self.closeSocket == False:
+
+            if (len(self.messageList) > 0):
+
+                message= self.messageList[0]
+                self.messageList.pop(0)
+                Thread(target=self.handleClientMessage, args=(message,)).start()
+
+
+
+    def listenClientMessages(self):
+
+        while self.closeSocket == False:
+
+            ready = select.select([self.serversocket], [], [], 1)
+
+            # si el servidor envio datos llamar a receive
+            if ready[0]:
+
+                data, addr = self.receiveMessage(self.serversocket, True)
+                # accept connections from outside
+                #  (clientSocket, address) = self.serversocket.accept()
+                print("Mensaje del cliente")
+                self.addMessage(ClientMessage(data,addr))
+                #Thread(target=self.handleClient, args=(data, addr,)).start()
+
+    def initOperation(self):
+
+        Thread(target= self.listenClientMessages, args=()).start()
+        Thread(target= self.readClientMessages, args=()).start()
+        Thread(target=self.checkFilesUploading, args=(self.filesUploading,)).start()
+
+    """"""""""""""""
+        
+    
 
     def handleClientConnections(self):
 
@@ -535,7 +645,7 @@ class UDPSocketServerManager:
                 #  (clientSocket, address) = self.serversocket.accept()
                 print("conexion con cliente")
                 Thread(target=self.handleClient, args=(data, addr,)).start()
-
+"""""""""""""""
 
 
 binaryFilesExtensions=[".jpg",".png",".gif",".bmp",".mp4",".avi",".mp3",".wav",".pdf",".doc",".xls",".xlsx",".ppt",".docx",".odt",

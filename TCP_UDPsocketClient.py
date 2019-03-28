@@ -490,7 +490,7 @@ class UDPClientSocketManager:
 
         try:
 
-            self.sendMesssage(self.socket, "1 "+ fileName)
+
 
             fileSize = os.path.getsize(fileName)
 
@@ -506,26 +506,32 @@ class UDPClientSocketManager:
 
             file = open(fileName, openMode)
 
-            self.sendMesssage(self.socket, fileType + " " + str(fileSize) + " " + str(mss))
+           #self.sendMesssage(self.socket, "1 " + fileName)
+
+            self.sendMesssage(self.socket,"1 "+fileName +" " +fileType + " " + str(fileSize) + " " + str(mss))
 
             fileData = "contenidoInicial"
             while len(fileData) > 0:
-                fileData = base64.b64encode(file.read(mss))
-                self.sendMesssage(self.socket, fileData)
-                time.sleep(1.2)
 
+                fileData = base64.b64encode(file.read(mss))
+                self.sendMesssage(self.socket, "1 " + fileName +" "+fileData)
+                time.sleep(1)
+
+            print("")
+            print("El archivo se ha enviado al servidor")
+            print("")
             file.close()
 
 
         except IOError as e:
-            self.sendMesssage(self.socket,"F")
+            self.sendMesssage(self.socket,"1 F")
             print(
                 "Ocurrio un error al intentar abrir el archivo puede que este no exista o simplemente se trata de un error de sistema")
             print(e)
 
 
         except OSError as e:
-            self.sendMesssage(self.socket,"F")
+            self.sendMesssage(self.socket,"1 F")
             print(
                 "Ocurrio un error al intentar abrir el archivo puede que este no exista o simplemente se trata de un error de sistema")
             print(e)

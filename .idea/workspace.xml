@@ -3,14 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="05846d4c-0a6a-4762-a5bb-8d6a6c93bb34" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2parte.PNG" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/TCP_UDPsocketClient.py" beforeDir="false" afterPath="$PROJECT_DIR$/TCP_UDPsocketClient.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TCP_UDPsocketServer.py" beforeDir="false" afterPath="$PROJECT_DIR$/TCP_UDPsocketServer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/algo.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/laboratorio.rar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nuevo.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/nuevocss.css" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,28 +14,27 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/TCP_UDPsocketClient.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-275">
-              <caret line="492" column="38" selection-start-line="492" selection-start-column="38" selection-end-line="492" selection-end-column="38" />
+            <state relative-caret-position="441">
+              <caret line="517" column="28" selection-start-line="517" selection-start-column="28" selection-end-line="517" selection-end-column="28" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
-                <element signature="e#237#11284#0" />
-                <element signature="e#297#1373#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/TCP_UDPsocketServer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="308">
-              <caret line="520" lean-forward="true" selection-start-line="520" selection-end-line="520" />
+            <state relative-caret-position="289">
+              <caret line="487" column="34" selection-start-line="487" selection-start-column="34" selection-end-line="487" selection-end-column="34" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
-                <element signature="e#132#12299#0" />
+                <element signature="e#13470#13531#0" />
+                <element signature="e#13596#14128#0" />
               </folding>
             </state>
           </provider>
@@ -63,12 +56,12 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/TCP_UDPsocket.py" />
-        <option value="$PROJECT_DIR$/TCP_UDPsocketClient.py" />
         <option value="$PROJECT_DIR$/TCP_UDPsocketServer.py" />
+        <option value="$PROJECT_DIR$/TCP_UDPsocketClient.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="10" />
     <option name="y" value="20" />
     <option name="width" value="1346" />
@@ -159,35 +152,35 @@
           <line>14</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/TCP_UDPsocketServer.py</url>
+          <line>425</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/algo.txt">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/nuevocss.css">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TCP_UDPsocketClient.py">
+    <entry file="file://$PROJECT_DIR$/algo.txt" />
+    <entry file="file://$PROJECT_DIR$/nuevocss.css" />
+    <entry file="file://$PROJECT_DIR$/TCP_UDPsocketServer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-275">
-          <caret line="492" column="38" selection-start-line="492" selection-start-column="38" selection-end-line="492" selection-end-column="38" />
+        <state relative-caret-position="289">
+          <caret line="487" column="34" selection-start-line="487" selection-start-column="34" selection-end-line="487" selection-end-column="34" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
-            <element signature="e#237#11284#0" />
-            <element signature="e#297#1373#0" />
+            <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#13470#13531#0" />
+            <element signature="e#13596#14128#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/TCP_UDPsocketServer.py">
+    <entry file="file://$PROJECT_DIR$/TCP_UDPsocketClient.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="308">
-          <caret line="520" lean-forward="true" selection-start-line="520" selection-end-line="520" />
+        <state relative-caret-position="441">
+          <caret line="517" column="28" selection-start-line="517" selection-start-column="28" selection-end-line="517" selection-end-column="28" />
           <folding>
-            <element signature="e#0#13#0" expanded="true" />
-            <element signature="e#132#12299#0" />
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
