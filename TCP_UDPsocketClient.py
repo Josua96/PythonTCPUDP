@@ -7,6 +7,7 @@ import base64
 import time
 import pickle
 import json
+from cryptography.fernet import Fernet
 
 """"""""""""""""" 
 Clase para implementacion de socket tcp
@@ -22,12 +23,16 @@ class TCPClientSocketManager:
             self.receiveBufferSize= receiveBufferSize
             self.sendBufferSize = sendBufferSize
             self.disconnetMe=False
+            self.myKey= Fernet.generate_key()
+            self.defaultKey= b'BHY_aiMMELU-lK7fP__Gs14T1XWqV8rV2fusTcZq2Os='
+            self.decryptor= Fernet(self.myKey)
           #  self.socket.setblocking(0)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, sendBufferSize)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, receiveBufferSize)
             self.socket.connect(( hostAdress , port))
            # self.socket.setblocking(0)
             print("conexion con el servidor exitosa")
+
             self.evaluateCommand(args)
 
 
@@ -46,9 +51,44 @@ class TCPClientSocketManager:
             print(e)
             sys.exit(1)
 
+    def decryptMessage(self,message,decode):
+
+        decryptedMessage = message
+
+        msg = self.decryptor.decrypt(decryptedMessage)
+
+        if decode == True:
+            msg = msg.decode()
+        return msg
+
+
+    def encryptMessage(self,encryptor, message,encode):
+
+        if encode == True:
+            message=message.encode()
+
+
+        encryptedMessage =encryptor.encrypt(message)
+
+        return encryptedMessage
+
+
     def evaluateCommand(self,args):
 
-        print("evaluando comandos")
+        # iniciar conversación
+        self.sendMesssage(self.socket,Fernet(self.defaultKey),self.myKey,False)
+
+        print("mi llave")
+        print(self.myKey)
+        data = self.receiveMessage(self.socket,False,True)
+        print("datos recibidos")
+        print(data)
+        if data != "OK":
+            print("El proceso de autenticación y configuracion de claves fallo, la conexión no es segura. Por lo tanto"
+                  "se aborta la operacion")
+            return
+
+        print("evaluando comandos porque el servidor ya tiene lo necesario (mi llave)")
 
         if str(args.command).lower() == "-u":
             if args.file:
@@ -70,16 +110,20 @@ class TCPClientSocketManager:
 
         sys.exit(1)
 
-    def sendMesssage(self, socketConnection, message):
+    def sendMesssage(self, socketConnection,encryptor, message,encode):
 
-        socketConnection.send(message)
+        realMessage = self.encryptMessage(encryptor, message,encode)
 
-    def receiveMessage(self, socketConnection,split):
+        socketConnection.send(realMessage)
+
+    def receiveMessage(self, socketConnection,split,decode):
         data=""
+        data = socketConnection.recv(self.receiveBufferSize)
+        data = self.decryptMessage(data,decode)
         if split == True:
-            data = socketConnection.recv(self.receiveBufferSize).split(" ")
-        else:
-            data = socketConnection.recv(self.receiveBufferSize)
+            data = data.split(" ")
+
+
         return data
 
     def typeOfFile(self,isBinary):
@@ -91,24 +135,26 @@ class TCPClientSocketManager:
 
     def seeFiles(self):
 
-        self.sendMesssage(self.socket,"2")
-        data= self.receiveMessage(self.socket,True)
+
+        self.sendMesssage(self.socket,self.decryptor ,"2",True)
+        data= self.receiveMessage(self.socket,True,True)
 
         if data[0]=="F":
-            self.sendMesssage(self.socket, "F")
+            self.sendMesssage(self.socket,self.decryptor,"F",True)
             print("El servidor tuvo problemas para acceder a el directorio de archivos")
             return
+
 
         amountofFiles= int(data[0])
 
         if amountofFiles == 0:
             #no los envie
-            self.sendMesssage(self.socket,"F")
+            self.sendMesssage(self.socket,self.decryptor,"F",True)
             print("El servidor no cuenta con ningun archivo actualmente")
             return
 
         else:
-            self.sendMesssage(self.socket, "T")
+            self.sendMesssage(self.socket, self.decryptor ,"T",True)
 
         windowSize= int(data[1])
         filesNamesReceived=0
@@ -120,7 +166,7 @@ class TCPClientSocketManager:
         #en cada mensaje vendra el numero del elemento de la lista transmitido y el texto correspondiente
         while True:
 
-            data= self.receiveMessage(self.socket,True)
+            data= self.receiveMessage(self.socket,True,True)
 
             if data[0]=="E":
                 print("")
@@ -134,7 +180,7 @@ class TCPClientSocketManager:
             forAck+=1
             if forAck == windowSize and filesNamesReceived < (amountofFiles-1):
 
-                self.sendMesssage(self.socket,str(filesNamesReceived))
+                self.sendMesssage(self.socket,self.decryptor,str(filesNamesReceived),True)
                 forAck=0
 
 
@@ -142,26 +188,27 @@ class TCPClientSocketManager:
 
         try:
             print("se envio mensaje al socket... "+ "0 "+ fileName)
-            self.sendMesssage(self.socket,"0 "+ fileName)
+            self.sendMesssage(self.socket,self.decryptor,"0 "+ fileName,True)
 
-            res= self.receiveMessage(self.socket,True)
+            res= self.receiveMessage(self.socket,True,True)
             print("se recibieron datos del socket")
             print(res)
 
             if res[0] == "F":
                 print("No fue posible obtener el archivo del servidor")
                 return
-            fileSize = int(res[6])
+            fileSize = int(res[5])
             mss = int(res[1])
             windowSize = int(res[2])
             ack = 0
-            newFile = open(res[3], self.typeOfFile(int(res[5])))
+
+            newFile = open(res[3], "wb")
 
             bytesTransfered = 0
             fileTransfered = False
             data = {}
             print("Notificar al servidor de que ya puede enviar el archivo")
-            self.sendMesssage(self.socket, "T")
+            self.sendMesssage(self.socket,self.decryptor,"T",True)
 
             while fileTransfered == False:
 
@@ -170,9 +217,9 @@ class TCPClientSocketManager:
 
                 # si el servidor envio datos llamar a receive
                 if ready[0]:
-                    data = self.receiveMessage(self.socket, True)
+                    data= self.receiveMessage(self.socket,True,True)
                     # data = client.recv(self.receiveBufferSize).split(" ")
-                    print("datos del archivo recibidos")
+
                     #  data= pickle.loads(data)
 
                     if (int(data[0]) == 1):
@@ -181,41 +228,27 @@ class TCPClientSocketManager:
                     # verificar si los bytes enviados corresponden a los siguientes bytes que yo estoy esperando, si no de igual manera aumenta el ack, pero no el byte transfered
                     # archivos de texto
 
-                    print("numero segmento " + data[3])
-                    print("esperado " + str(bytesTransfered))
-                    print("primera condicion " + str(int(data[3]) * mss))
-                    print("segunda condicion" + str(bytesTransfered + mss))
+
 
                     if (int(data[3]) * mss == (bytesTransfered + mss)):
 
-                        if int(data[1]) == 0:
-                            lines = base64.b64decode(data[2]).split("\n")
-                            largo = len(lines) - 1
-                            for line in lines:
-                                if line == lines[largo]:
-                                    newFile.write(line)
-                                else:
-                                    newFile.write(line + os.linesep)
-
-                        else:
-                            newFile.write(base64.b64decode(data[2]))
-
+                        newFile.write(base64.b64decode(data[2]))
                         bytesTransfered += mss
 
                     ack += mss
 
                     if (ack >= windowSize):
                         if bytesTransfered < fileSize:
-                            self.sendMesssage(self.socket, str(bytesTransfered))
-                            #  client.send(str(bytesTransfered))
+                            self.sendMesssage(self.socket, self.decryptor, str(bytesTransfered), True)
+
                             ack = 0
 
-                            #  client.send(pickle.dumps({"ack":ack}))
+
 
             newFile.close()
 
         except IOError as e:
-            self.sendMesssage(self.socket,"F")
+            self.sendMesssage(self.socket,self.decryptor,"F",True)
             print(
                 "Ocurrio un error generando el archivo")
             print(e)
@@ -238,11 +271,9 @@ class TCPClientSocketManager:
             print("size archivo: " + str(fileSize))
             print("extension del archivo "+ extension)
 
-            openMode="r"
-            if extension in binaryFilesExtensions:
-                openMode+="b"
-              #  isBinary=True
-                fileType="1"
+          #  openMode="rb"
+
+            openMode="rb"
 
             file = open(fileName, openMode)
             fileData=""
@@ -250,16 +281,12 @@ class TCPClientSocketManager:
 
                 if(startTransmission==False):
 
-                    print("Solicitando al servidor el servicio de subir archivo")
-                    """""""""""
-                    self.socket.send(pickle.dumps({"action":1, "mss":800,"windowSize":int(dataSegment),
-                                      "fileName":fileName,"status":0,"isBinary":isBinary,
-                                      "fileSize":int(fileSize)}))
-                    """""""""
-                    self.sendMesssage(self.socket,"1 "+ str(mss) + " "+ str(dataSegment)+" "+ fileName+" "+"0 "+ fileType +" " +str(fileSize))
+                    self.sendMesssage(self.socket,self.decryptor,"1 "+ str(mss) + " "+ str(dataSegment)+" "+ fileName+" "+"0 "+str(fileSize),
+                                      True
+                                      )
                   #  self.socket.send("1 1800 "+ str(dataSegment)+" "+ fileName+" "+"0 "+"0 "+str(fileSize))
 
-                    data= self.receiveMessage(self.socket,False)
+                    data= self.receiveMessage(self.socket,False,True)
                     if data =="T":
                         startTransmission=True
                         print("Va a iniciar la transmision del archivo")
@@ -272,7 +299,7 @@ class TCPClientSocketManager:
 
                     # si el servidor envio datos llamar a receive
                     if ready[0]:
-                        data= self.receiveMessage(self.socket,False)
+                        data= self.receiveMessage(self.socket,False,True)
                        # data= pickle.loads(data)
                         print("el servidor dice que va por esto")
                         print(data)
@@ -284,25 +311,31 @@ class TCPClientSocketManager:
                         file.seek(int(data))
 
                     fileData =base64.b64encode(file.read(mss))
+                   # fileData = file.read(mss)
                     print("datos en el archivo")
+                    print(" ".encode())
                     print(fileData)
                     print("decodificando")
                     print(fileData)
+
+                    """""""""""
+                    if (fileType != "1"):
+                        fileData = fileData.encode()
+                    """""""""""""""
                     if len(fileData)==0:
                         #informar que se finalizo de transmitir el archivo
-                      #  self.socket.send(pickle.dumps({"status":1}))
+
                         print("segment number to server : "+ str(segmentNumber))
-                        self.sendMesssage(self.socket,"1 "+ fileType +" "+fileData+" " + str(segmentNumber))
-                     #   self.socket.send("1 "+ fileType +" "+fileData)
+
+                        self.sendMesssage(self.socket,self.decryptor,"1 ".encode()+ fileType.encode() +" ".encode()+fileData+" ".encode() + str(segmentNumber).encode(),False)
+
                         finishFileTransmission=True
 
 
                     else:
                         segmentNumber += 1
-                        self.sendMesssage(self.socket,"0 "+ fileType +" " + fileData+ " " + str(segmentNumber))
-                      #  self.socket.send("0 "+ fileType +" " + fileData)
-                        #el envio continua
-                       # self.socket.send(pickle.dumps({"status":0,"data":fileData}))
+                        self.sendMesssage(self.socket,self.decryptor,"0 ".encode()+ fileType.encode() +" ".encode() + fileData+ " ".encode() + str(segmentNumber).encode(),False)
+
 
             file.close()
 
@@ -332,6 +365,8 @@ class UDPClientSocketManager:
             self.disconnetMe = False
             self.hostAddress= hostAdress
             self.port= port
+            self.defaultKey = b'BHY_aiMMELU-lK7fP__Gs14T1XWqV8rV2fusTcZq2Os='
+            self.decryptor = Fernet(self.defaultKey)
             #  self.socket.setblocking(0)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, sendBufferSize)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, receiveBufferSize)
@@ -355,6 +390,25 @@ class UDPClientSocketManager:
             print("Error estableciendo la conexion con el servidor")
             print(e)
             sys.exit(1)
+
+    def decryptMessage(self, message, decode):
+
+        decryptedMessage = message
+
+        msg = self.decryptor.decrypt(decryptedMessage)
+
+        if decode == True:
+            msg = msg.decode()
+        return msg
+
+    def encryptMessage(self,message, encode):
+
+        if encode == True:
+            message = message.encode()
+
+        encryptedMessage = self.decryptor.encrypt(message)
+
+        return encryptedMessage
 
     def evaluateCommand(self, args):
 
@@ -380,21 +434,23 @@ class UDPClientSocketManager:
 
         sys.exit(1)
 
-    def sendMesssage(self, socketConnection, message):
+    def sendMesssage(self, socketConnection, message,encode):
 
-        socketConnection.sendto(message,(self.hostAddress,self.port))
+        realMessage = self.encryptMessage(message, encode)
 
-    def receiveMessage(self, socketConnection, split):
+        socketConnection.sendto(realMessage,(self.hostAddress,self.port))
+
+    def receiveMessage(self, socketConnection, split,decode):
 
         data=""
         address=""
+        data,address= socketConnection.recvfrom(self.receiveBufferSize)
+
+        data = self.decryptMessage(data, decode)
 
         if split == True:
-            data,address= socketConnection.recvfrom(self.receiveBufferSize)
-            data= data.split(" ")
+            data = data.split(" ")
 
-        else:
-            data,address= socketConnection.recvfrom(self.receiveBufferSize)
         return data,address
 
 
@@ -409,7 +465,7 @@ class UDPClientSocketManager:
 
     def seeFiles(self):
 
-        self.sendMesssage(self.socket, "2")
+        self.sendMesssage(self.socket, "2",True)
 
         fileNamesReceived=0
 
@@ -419,7 +475,7 @@ class UDPClientSocketManager:
 
             while True:
                 self.socket.settimeout(5)
-                data,clientAddress = self.receiveMessage(self.socket, False)
+                data,clientAddress = self.receiveMessage(self.socket, False,True)
 
                 if data=="F":
                     print("El servidor tuvo problemas para acceder al directorio de archivos")
@@ -438,42 +494,31 @@ class UDPClientSocketManager:
         try:
 
             self.socket.settimeout(5)
-            print("se envio mensaje al socket... " + "0 " + fileName)
-            self.sendMesssage(self.socket, "0 " + fileName)
 
-            res,address = self.receiveMessage(self.socket, True)
+            self.sendMesssage(self.socket,"0 " + fileName,True)
+
+            res,address = self.receiveMessage(self.socket, True,True)
 
             if res[0] == "F":
                 print("No fue posible obtener el archivo del servidor")
                 return
 
-            print("respuesta del servidor")
-            print(res)
+
             fileSize= int(res[1])
             mss=int(res[2])
             receivedBytes = 0
-            print("tipo de lectura: "+ self.typeOfFile(int(res[0])))
-            newFile = open(fileName, self.typeOfFile(int(res[0])))
+
+
+
+            newFile = open(fileName, "wb")
 
             while True:
 
 
 
-                data,address = self.receiveMessage(self.socket, False)
+                data,address = self.receiveMessage(self.socket,False,False)
 
-                if int(res[0]) == 0:
-                    lines = base64.b64decode(data).split("\n")
-                    largo = len(lines) - 1
-                    for line in lines:
-                        if line == lines[largo]:
-                            newFile.write(line)
-                        else:
-                            newFile.write(line + os.linesep)
-
-                else:
-                    newFile.write(base64.b64decode(data))
-
-
+                newFile.write(base64.b64decode(data))
                 receivedBytes+=mss
 
 
@@ -498,23 +543,19 @@ class UDPClientSocketManager:
             mss = 1800
             #  isBinary=False
             fileType = "0"
-            openMode = "r"
-            if extension in binaryFilesExtensions:
-                openMode += "b"
-                #  isBinary=True
-                fileType = "1"
+            openMode = "rb"
 
             file = open(fileName, openMode)
 
-           #self.sendMesssage(self.socket, "1 " + fileName)
 
-            self.sendMesssage(self.socket,"1 "+fileName +" " +fileType + " " + str(fileSize) + " " + str(mss))
+
+            self.sendMesssage(self.socket,"1 "+fileName +" " +fileType + " " + str(fileSize) + " " + str(mss),True)
 
             fileData = "contenidoInicial"
             while len(fileData) > 0:
 
                 fileData = base64.b64encode(file.read(mss))
-                self.sendMesssage(self.socket, "1 " + fileName +" "+fileData)
+                self.sendMesssage(self.socket, "1 ".encode() + fileName.encode() +" ".encode()+fileData,False)
                 time.sleep(1)
 
             print("")
@@ -524,14 +565,14 @@ class UDPClientSocketManager:
 
 
         except IOError as e:
-            self.sendMesssage(self.socket,"1 F")
+            self.sendMesssage(self.socket,"1 F",True)
             print(
                 "Ocurrio un error al intentar abrir el archivo puede que este no exista o simplemente se trata de un error de sistema")
             print(e)
 
 
         except OSError as e:
-            self.sendMesssage(self.socket,"1 F")
+            self.sendMesssage(self.socket,"1 F",True)
             print(
                 "Ocurrio un error al intentar abrir el archivo puede que este no exista o simplemente se trata de un error de sistema")
             print(e)
@@ -540,13 +581,10 @@ class UDPClientSocketManager:
 SEND_BUF_SIZE = 4096
 RECV_BUF_SIZE = 4096
 
-
 TCPPort=8083
 UDPPort=8084
 
-binaryFilesExtensions=[".jpg",".png",".gif",".bmp",".mp4",".avi",".mp3",".wav",".pdf",".doc",".xls",".ppt",".docx",".odt",
-                       ".zip", ".rar", ".7z", ".tar", ".iso",".exe",".dll"]
-textFilesExtensions=[".txt",".html",".xml",".css",".svg",".json"]
+
 
 def main():
     parser = argparse.ArgumentParser(description='Manage params')
@@ -563,8 +601,6 @@ def main():
     elif (int(given_args.port)== 8084):
         clientSocket = UDPClientSocketManager(given_args.host, int(given_args.port), SEND_BUF_SIZE, RECV_BUF_SIZE,
                                               given_args)
-   # list = os.listdir("files") # returns list
-   # print(list)
 
 if __name__ == '__main__':
     main()

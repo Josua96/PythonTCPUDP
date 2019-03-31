@@ -1,146 +1,152 @@
-    public function relacionarNombramiento($cedula,$idNombramiento,$fechaFin){
-
-        //realiza la insercion de funcionarios_nombramiento en la base de datos
-        $funcionarios_nombramientos = new Funcionario_Nombramiento;
-
-        $funcionarios_nombramientos->cedula = $cedula;
-        $funcionarios_nombramientos->id_nombramiento = $idNombramiento;
-        $funcionarios_nombramientos->fecha_nombramiento = $fechaFin;
-
-        $funcionarios_nombramientos->save();
-
-        return;
-    }
-
-
-    public function crearNombramiento($cedula,$idPuesto,$fechaInicio,$fechaFin,$tiempo,$tipo,$sustituye,$estado,$motivo){
-        
-        $nombramientos = new Nombramiento;
-
-        $nombramientos->id_puesto = $idPuesto;
-        $nombramientos->fecha_inicio = $fechaInicio;
-        $nombramientos->fecha_fin = $fechaFin;
-        $nombramientos->numero_dias = 0;
-        $nombramientos->tiempo = $tiempo;
-        $nombramientos->tipo = $tipo;
-        $nombramientos->sustituye = $sustituye;
-        $nombramientos->estado = $estado;
-        $nombramientos->motivo = $motivo;
-
-        $nombramientos->save();
-
-        $this->relacionarNombramiento($cedula, $nombramientos->id,$fechaFin);
-
-        return $nombramientos;
-    }
-
-
-
- /****
-     * Verificar antes si el nombramiento es superpuesto o no.
-     */
-    public function verificarTipoNombramiento(Request $request){
-
-        if ($request->input('estadoFuncionario'))
-        {
-            $this->crearNombramiento($request);
-        }
-
-        else{
-
-            $out= new \Symfony\Component\Console\Output\ConsoleOutput();
-            $out->writeln("Sera superpuesto");
-            $this->iniciarNombramientoSuperpuesto($request);
-        }
-
-    }
-
-    public function obtenerDiferenciaDias($desde,$hasta){
-
-        $to = \Carbon\Carbon::createFrom$desde,$hasta){
-
-        $to = \Carbon\Carbon::createFromFormat('Y-m-d', $desde);
-        $from = \Carbon\Carbon::createFromFormat('Y-m-d', $hasta);
-        return $to->diffInDays($from);
-
-    }
-
-
-    public function insertarNuevoNombramiento($nombramiento,$fechaInicio,$fechaFin){
-    }
-
-
-    public function fragmentacionIzquierdaNombramiento($nombramiento,$fechaInicio){
-
-        $nombramiento->estado= 0;
-        $nombramiento->fecha_fin= $fechaInicio;
-        $nombramiento->numero_dias= $this->obtenerDiferenciaDias($nombramiento->fecha_inicio,$fechaInicio);
-        $nombramiento->save();
-        return;
-
-    }
-
-    public function fragmentacionDerechaNombramiento($nombramiento,$fechaFin){
-        
-        
-        $nombramiento->estado= 0;
-        $nombramiento->fecha_inicio= $fechaFin;
-        $nombramiento->numero_dias= 0;
-        $nombramiento->save();
-        return;
-    }
-
-    public function obtenerCedulaDeNombramiento($idNombramiento){
-
-        $datosNombramiento = Funcionario_Nombramiento::where('id_nombramiento', '=', $idNombramiento)->first();
-
-        return $datosNombramiento->cedula;
-
-    }
-    
-
-    public function administrarNombramientosPuesto($nombramientos,$fechaInicio,$fechaFin,$tiempo,$tipo,$sustituye,$motivo){
-        
-        $tempFechaFin="";
-        $cedula="";
-
-        foreach($nombramientos as $nombramientoAfectado) {
-
-            if( (strtotime($fechaInicio) >=  strtotime($nombramientoAfectado->fecha_inicio)) &&
-                strtotime($fechaInicio) <= strtotime($nombramientoAfectado->fecha_fin)){
-
-                $tempFechaFin= $nombramientoAfectado->fecha_fin;
-
-                $cedula= $this->obtenerCedulaDeNombramiento($nombramientoAfectado->id);
-
-      
-                
-                $this->fragmentacionIzquierdaNombramiento($nombrami       $this->fragmentacionIzquierdaNombramiento($nombramientoAfectado,$fechaInicio);
-                
-                if (strtotime($fechaFin) <= strtotime($tempFechaFin)){
-                    
-                    $this->crearNombramiento($cedula,$nombramientoAfectado->id_puesto,$fechaFin,
-                            $tempFechaFin,$tiempo,$tipo,$sustituye, 1,$motivo);
-                }
-                
-            }
-    }
-        return;
-    }
-    public function obtenerNombramientosProximosPuesto($idPuesto,$fechaInicio){
-        
-        $nombramientos_afectados = Nombramiento::where('estado','=',1)
-                        ->where('id_puesto','=',$idPuesto)
-                        ->where('fecha_inicio','<=',$fechaInicio)
-                        ->orderBy('created_at','desc')->take(2)->get();
-                        //->take(2); //si el nombramiento está fraccionado en medio tiempo podría estar segmentado en dos nombramientos
-                             /*->where($fechaFin, '<=','fecha_fin') */
-        return $nombramientos_afectados;
-    }
-    public function iniciarNombramientoSuperpuesto(Request $request){
-        $nombramientos = $this->obtenerNombramientosProximosPuesto($request->input('id_puesto'), $request->input('fecha_inicio'));
-        $this->administrarNombramientosPuesto($nombramientos, 
-            $request->input('fecha_inicio'),  $request->input('fecha_fin'),$request->input('tiempo'),
-            $request->input('tipo'),$request->input('sustituye'),$request->input('motivo'));
-        
-    }
+    public function relacionarNombramiento($cedula,$idNombramiento,$fechaFin){
+
+        //realiza la insercion de funcionarios_nombramiento en la base de datos
+        $funcionarios_nombramientos = new Funcionario_Nombramiento;
+
+        $funcionarios_nombramientos->cedula = $cedula;
+        $funcionarios_nombramientos->id_nombramiento = $idNombramiento;
+        $funcionarios_nombramientos->fecha_nombramiento = $fechaFin;
+
+        $funcionarios_nombramientos->save();
+
+        return;
+    }
+
+
+    public function crearNombramiento($cedula,$idPuesto,$fechaInicio,$fechaFin,$tiempo,$tipo,$sustituye,$estado,$motivo){
+        
+        $nombramientos = new Nombramiento;
+
+        $nombramientos->id_puesto = $idPuesto;
+        $nombramientos->fecha_inicio = $fechaInicio;
+        $nombramientos->fecha_fin = $fechaFin;
+        $nombramientos->numero_dias = 0;
+        $nombramientos->tiempo = $tiempo;
+        $nombramientos->tipo = $tipo;
+        $nombramientos->sustituye = $sustituye;
+        $nombramientos->estado = $estado;
+        $nombramientos->motivo = $motivo;
+
+        $nombramientos->save();
+
+        $this->relacionarNombramiento($cedula, $nombramientos->id,$fechaFin);
+
+        return $nombramientos;
+    }
+
+
+
+ /****
+     * Verificar antes si el nombramiento es superpuesto o no.
+     */
+    public function verificarTipoNombramiento(Request $request){
+
+        if ($request->input('estadoFuncionario'))
+        {
+            $this->crearNombramiento($request);
+        }
+
+        else{
+
+            $out= new \Symfony\Component\Console\Output\ConsoleOutput();
+            $out->writeln("Sera superpuesto");
+            $this->iniciarNombramientoSuperpuesto($request);
+        }
+
+    }
+
+    public function obtenerDiferenciaDias($desde,$hasta){
+
+        $to = \Carbon\Carbon::createFromFormat('Y-m-d', $desde);
+        $from = \Carbon\Carbon::createFromFormat('Y-m-d', $hasta);
+        return $to->diffInDays($from);
+
+    }
+
+
+    public function insertarNuevoNombramiento($nombramiento,$fechaInicio,$fechaFin){
+    }
+
+
+    public function fragmentacionIzquierdaNombramiento($nombramiento,$fechaInicio){
+
+        $nombramiento->estado= 0;
+        $nombramiento->fecha_fin= $fechaInicio;
+        $nombramiento->numero_dias= $this->obtenerDiferenciaDias($nombramiento->fecha_inicio,$fechaInicio);
+        $nombramiento->save();
+        return;
+
+    }
+
+    public function fragmentacionDerechaNombramiento($nombramiento,$fechaFin){
+        
+        
+        $nombramiento->estado= 0;
+        $nombramiento->fecha_inicio= $fechaFin;
+        $nombramiento->numero_dias= 0;
+        $nombramiento->save();
+        return;
+    }
+
+    public function obtenerCedulaDeNombramiento($idNombramiento){
+
+        $datosNombramiento = Funcionario_Nombramiento::where('id_nombramiento', '=', $idNombramiento)->first();
+
+        return $datosNombramiento->cedula;
+
+    }
+    
+
+    public function administrarNombramientosPuesto($nombramientos,$fechaInicio,$fechaFin,$tiempo,$tipo,$sustituye,$motivo){
+        
+        $tempFechaFin="";
+        $cedula="";
+
+        foreach($nombramientos as $nombramientoAfectado) {
+
+            if( (strtotime($fechaInicio) >=  strtotime($nombramientoAfectado->fecha_inicio)) &&
+                strtotime($fechaInicio) <= strtotime($nombramientoAfectado->fecha_fin)){
+
+                $tempFechaFin= $nombramientoAfectado->fecha_fin;
+
+                $cedula= $this->obtenerCedulaDeNombramiento($nombramientoAfectado->id);
+
+      
+                
+                $this->fragmentacionIzquierdaNombramiento($nombramientoAfectado,$fechaInicio);
+
+                
+                if (strtotime($fechaFin) <= strtotime($tempFechaFin)){
+                    
+                    $this->crearNombramiento($cedula,$nombramientoAfectado->id_puesto,$fechaFin,
+                            $tempFechaFin,$tiempo,$tipo,$sustituye, 1,$motivo);
+                }
+                
+            }
+    }
+        return;
+
+    }
+
+    public function obtenerNombramientosProximosPuesto($idPuesto,$fechaInicio){
+        
+        $nombramientos_afectados = Nombramiento::where('estado','=',1)
+                        ->where('id_puesto','=',$idPuesto)
+                        ->where('fecha_inicio','<=',$fechaInicio)
+                        ->orderBy('created_at','desc')->take(2)->get();
+                        //->take(2); //si el nombramiento está fraccionado en medio tiempo podría estar segmentado en dos nombramientos
+                             /*->where($fechaFin, '<=','fecha_fin') */
+
+        return $nombramientos_afectados;
+
+    }
+
+    public function iniciarNombramientoSuperpuesto(Request $request){
+
+        $nombramientos = $this->obtenerNombramientosProximosPuesto($request->input('id_puesto'), $request->input('fecha_inicio'));
+
+        $this->administrarNombramientosPuesto($nombramientos, 
+            $request->input('fecha_inicio'),  $request->input('fecha_fin'),$request->input('tiempo'),
+            $request->input('tipo'),$request->input('sustituye'),$request->input('motivo'));
+        
+    }

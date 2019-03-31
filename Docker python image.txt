@@ -1,0 +1,15 @@
+docker pull alpine
+para copiar una imagen de python muy liviana
+
+comando para instalr pycryptop pip install pycryptodomex
+
+otra librería pip install simple-crypt
+
+pip install cryptography
+
+instale cryptography con pycharm
+
+obtener la ruta 
+>>> import cryptography
+>>> cryptography.__file__
+'C:\\Users\\Josua\\AppData\\Local\\Programs\\Python\\Python37\\lib\\site-packages\\cryptography\\__init__.py'
