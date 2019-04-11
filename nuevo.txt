@@ -1,0 +1,6 @@
+este es un archivo de prueba para
+corroborar si lineas con espacios en blanco son respetadoas
+porque parece que
+no quisiera soportarlo %
+
+ahora

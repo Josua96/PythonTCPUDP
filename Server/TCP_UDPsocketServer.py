@@ -536,7 +536,9 @@ class UDPSocketServerManager:
         while self.closeSocket == False:
 
             dictKeysUsed=[]
-            for fileUpload in filesDic.keys():
+
+           # for i in list(d):
+            for fileUpload in list(filesDic.keys()):
 
                 if (len(filesDic[fileUpload]) == 1):
                     continue
