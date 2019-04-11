@@ -120,7 +120,6 @@ class TCPClientSocketManager:
 
         data=""
         data = socketConnection.recv(self.receiveBufferSize)
-        print(data)
         data = self.decryptMessage(data,decode)
 
         if split == True:
