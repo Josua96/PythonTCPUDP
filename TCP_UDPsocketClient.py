@@ -117,9 +117,12 @@ class TCPClientSocketManager:
         socketConnection.send(realMessage)
 
     def receiveMessage(self, socketConnection,split,decode):
+
         data=""
         data = socketConnection.recv(self.receiveBufferSize)
+        print(data)
         data = self.decryptMessage(data,decode)
+
         if split == True:
             data = data.split(" ")
 

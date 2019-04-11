@@ -88,7 +88,7 @@ class TCPSocketServerManager:
 
         try:
 
-            folderFiles = os.listdir("files")
+            folderFiles = os.listdir()
             filesAmount= len(folderFiles)
             windowSize=5
 
@@ -121,8 +121,7 @@ class TCPSocketServerManager:
 
                 self.sendMesssage(client,clientEncryptor,str(fileTransmitted)+" "+folderFiles[fileTransmitted],True)
                 fileTransmitted+=1
-
-
+                
             self.sendMesssage(client,clientEncryptor,"E",True)
 
         except IOError as e:
@@ -142,7 +141,7 @@ class TCPSocketServerManager:
 
         try:
 
-            fileSize= os.path.getsize("files/"+fileName)
+            fileSize= os.path.getsize(fileName)
 
             dataSegment= fileSize//8
             url, extension  = os.path.splitext(fileName)
@@ -157,7 +156,7 @@ class TCPSocketServerManager:
 
             openMode="rb"
 
-            file = open("files/"+fileName, openMode)
+            file = open(fileName, openMode)
             fileData=""
             while finishFileTransmission == False:
 
@@ -237,7 +236,7 @@ class TCPSocketServerManager:
             windowSize= int(initialData[2])
             ack=0
 
-            newFile = open("files/" + initialData[3], "wb")
+            newFile = open(initialData[3], "wb")
 
             bytesTransfered=0
             fileTransfered=False
@@ -436,7 +435,7 @@ class UDPSocketServerManager:
 
 
         print("desea ver los archivos del servidor")
-        folderFiles = os.listdir("files")
+        folderFiles = os.listdir()
 
 
         print("archivos en carpeta.. ")
@@ -460,7 +459,7 @@ class UDPSocketServerManager:
 
         try:
 
-            fileSize= os.path.getsize("files/"+fileName)
+            fileSize= os.path.getsize(fileName)
 
             url, extension  = os.path.splitext(fileName)
             mss=1800
@@ -468,7 +467,7 @@ class UDPSocketServerManager:
             fileType="0"
             openMode="rb"
 
-            file = open("files/"+fileName, openMode)
+            file = open(fileName, openMode)
 
 
             self.sendMesssage(client, clientAddress, fileType+" "+str(fileSize)+" "+str(mss),True)
@@ -511,7 +510,7 @@ class UDPSocketServerManager:
 
             if ((len(fileData)-1)* int(fileData[0]["fileSegment"])) >= fileSize:
 
-                newFile = open("files/" + fileData[0]["fileName"],"wb")
+                newFile = open(fileData[0]["fileName"],"wb")
 
                 for index in range(1,len(fileData),1):
 
