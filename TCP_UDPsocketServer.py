@@ -657,6 +657,10 @@ class UDPSocketServerManager:
 SEND_BUF_SIZE = 4096
 RECV_BUF_SIZE = 4096
 
+if not os.path.exists("files"):
+    os.makedirs("files")
+
+
 
 def runTCPSocket():
     tcpServerSocket = TCPSocketServerManager(RECV_BUF_SIZE, SEND_BUF_SIZE, 8083)

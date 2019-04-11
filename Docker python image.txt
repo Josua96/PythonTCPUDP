@@ -9,6 +9,10 @@ pip install cryptography
 
 instale cryptography con pycharm
 
+generar docker
+
+docker build --tag socketclient -f /Dockerfile .
+
 obtener la ruta 
 >>> import cryptography
 >>> cryptography.__file__
